@@ -37,6 +37,8 @@ var processTests = function (files) {
 }
 
 // drupal.org Issues
+var queued = document.querySelectorAll('li.pift-ci-queued');
+processTests(queued);
 var sent = document.querySelectorAll('li.pift-ci-sent');
 processTests(sent);
 var running = document.querySelectorAll('li.pift-ci-running');
