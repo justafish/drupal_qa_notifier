@@ -28,54 +28,47 @@ function onWatchdog() {
         }
 
         if (subscriptions.length > 0) {
-          var tests = subscriptions.join('+');
-          var xhr = new XMLHttpRequest();
-          var time = new Date().getTime();
-          xhr.open("GET", "https://qa.drupal.org/pifr/test/" + tests + "/json?time=" + time, true);
-          xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && typeof xhr.responseText !== "undefined") {
-              try {
-                var resp = JSON.parse(xhr.responseText);
-                if (resp.tests && resp.tests.length) {
-                  for (var i = 0; i < resp.tests.length; i++) {
-                    if (resp.tests[i]['test']) {
-                      test = resp.tests[i]['test'];
-                      if (test.status === "Result") {
+          for (var i = 0; i < tests.length; i++) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "https://www.drupal.org/api-d7/pift_ci_job/" + tests + ".json", true);
+            xhr.onreadystatechange = function () {
+              if (xhr.readyState === 4 && typeof xhr.responseText !== "undefined") {
+                try {
+                  var test = JSON.parse(xhr.responseText);
+                  if (test.status == "complete") {
 
-                        item.subscriptions[test.id] = null;
-                        delete item.subscriptions[test.id];
+                    item.subscriptions[test.job_id] = null;
+                    delete item.subscriptions[test.job_id];
 
-                        if (!("Notification" in window)) {
+                    if (!("Notification" in window)) {
+                    }
+                    else if (Notification.permission === "granted") {
+                      // If it's okay let's create a notification
+                      showResultNotification(test);
+                    }
+                    else if (Notification.permission !== 'denied') {
+                      Notification.requestPermission(function (permission) {
+
+                        // Whatever the user answers, we make sure we store the information
+                        if (!('permission' in Notification)) {
+                          Notification.permission = permission;
                         }
-                        else if (Notification.permission === "granted") {
-                          // If it's okay let's create a notification
+
+                        if (permission === "granted") {
                           showResultNotification(test);
                         }
-                        else if (Notification.permission !== 'denied') {
-                          Notification.requestPermission(function (permission) {
-
-                            // Whatever the user answers, we make sure we store the information
-                            if (!('permission' in Notification)) {
-                              Notification.permission = permission;
-                            }
-
-                            if (permission === "granted") {
-                              showResultNotification(test);
-                            }
-                          });
-                        }
-                      }
+                      });
                     }
                   }
                 }
+                catch(e) {}
+                finally {
+                  chrome.storage.sync.set({subscriptions: item.subscriptions});
+                }
               }
-              catch(e) {}
-              finally {
-                chrome.storage.sync.set({subscriptions: item.subscriptions});
-              }
-            }
-          };
-          xhr.send();
+            };
+            xhr.send();
+          }
         }
       });
     }
@@ -88,11 +81,11 @@ function showResultNotification(test) {
     icon: '48.png'
   });
   notification.onclick = function () {
-    if (typeof test.dorg_link !== "undefined" && test.dorg_link.length > 0) {
-      window.open(test.dorg_link);
+    if (typeof test.issue_nid !== "undefined" && test.issue_nid.length > 0) {
+      window.open('https://www.drupal.org/node/' + test.issue_nid);
     }
     else {
-      window.open('https://qa.drupal.org/pifr/test/' + test.id);
+      window.open(test.url);
     }
   }
   notification.show();

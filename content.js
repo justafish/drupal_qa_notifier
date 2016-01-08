@@ -29,23 +29,17 @@ var addButton = function (files, index, testID) {
   files[index].appendChild(btn);
 };
 
-// drupal.org Issues
-var files = document.querySelectorAll('div.pift-operations');
-for (var i = 0; i < files.length; i++) {
-  var operationLinks = files[i].getElementsByTagName('a');
-  for (var j = 0; j < operationLinks.length; j++) {
-    if (operationLinks[j].innerHTML === 'View') {
-      var testID = operationLinks[j].getAttribute("href").split("/").pop();
-      addButton(files, i, testID);
-      break;
-    }
+var processTests = function (files) {
+  for (var i = 0; i < files.length; i++) {
+    var testID = files[i].getElementsByTagName('a')[0].href.split("/").pop();
+    addButton(files, i, testID);
   }
 }
 
-// qa.drupal.org test page
-var files = document.querySelectorAll('#pifr-status');
-if (files.length > 0) {
-  var pathArray = window.location.pathname.split( '/' );
-  var testID = pathArray[pathArray.length - 1];
-  addButton(files, 0, testID);
-}
+// drupal.org Issues
+var queued = document.querySelectorAll('li.pift-ci-queued');
+processTests(queued);
+var sent = document.querySelectorAll('li.pift-ci-sent');
+processTests(sent);
+var running = document.querySelectorAll('li.pift-ci-running');
+processTests(running);
